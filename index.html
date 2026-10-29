@@ -1,0 +1,243 @@
+<!DOCTYPE html><html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Battery Management System</title>
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:Arial,sans-serif;
+  background:#101827;
+  color:#f1f5f9;
+  padding:18px;
+}
+.container{max-width:850px;margin:auto}
+h1{text-align:center;color:#38bdf8;font-size:27px}
+.subtitle{text-align:center;color:#cbd5e1}
+.card{
+  background:#1e293b;
+  border:1px solid #334155;
+  border-radius:14px;
+  padding:18px;
+  margin:16px 0;
+}
+h2{font-size:19px;color:#7dd3fc;margin-top:0}
+.battery-area{text-align:center;padding:12px}
+.battery{
+  width:140px;height:65px;
+  border:4px solid #cbd5e1;
+  border-radius:9px;
+  margin:20px auto;
+  position:relative;
+  padding:5px;
+}
+.battery:after{
+  content:"";
+  position:absolute;
+  right:-13px;top:17px;
+  width:9px;height:24px;
+  background:#cbd5e1;
+  border-radius:0 4px 4px 0;
+}
+#batteryFill{
+  height:100%;width:75%;
+  background:#22c55e;border-radius:3px;
+  transition:width .3s;
+}
+.wire{
+  width:5px;height:32px;
+  background:#f59e0b;margin:auto;
+}
+.metrics{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+}
+.metric{
+  background:#0f172a;
+  padding:14px;
+  border-radius:10px;
+  text-align:center;
+}
+.metric span{display:block;color:#94a3b8;font-size:13px}
+.metric strong{display:block;font-size:23px;margin-top:8px}
+input[type=range]{width:100%;margin:12px 0}
+label{display:block;margin-top:15px}
+button{
+  border:0;border-radius:8px;padding:12px 14px;
+  margin:5px 3px;font-weight:bold;cursor:pointer;
+  background:#38bdf8;color:#082f49;
+}
+button.fault{background:#f97316;color:#fff}
+button.reset{background:#cbd5e1;color:#0f172a}
+#status{
+  padding:12px;border-radius:8px;text-align:center;
+  background:#14532d;color:#bbf7d0;font-weight:bold;
+}
+#led{
+  display:inline-block;width:13px;height:13px;
+  border-radius:50%;background:#22c55e;margin-right:8px;
+}
+svg{width:100%;height:150px;background:#0f172a;border-radius:8px}
+footer{text-align:center;color:#94a3b8;font-size:12px;margin:25px 0}
+@media(min-width:600px){
+  .metrics{grid-template-columns:repeat(4,minmax(0,1fr))}
+}
+</style>
+</head>
+<body>
+<div class="container"><h1>🔋 Battery Management System</h1>
+<p class="subtitle">Interactive BMS Monitoring & Protection Simulation</p><div class="card">
+<h2>Battery Circuit Simulation</h2>
+<div class="battery-area">
+  <div>🔌 Battery Pack</div>
+  <div class="battery"><div id="batteryFill"></div></div>
+  <div id="batteryLabel">75% State of Charge</div>
+  <div class="wire"></div>
+  <div>⚡ Load / Resistor</div>
+  <p>Battery → Current Monitoring → Load</p>
+</div>
+</div><div class="card">
+<h2>Live Battery Parameters</h2>
+<div class="metrics">
+  <div class="metric"><span>Voltage</span><strong id="voltage">12.0 V</strong></div>
+  <div class="metric"><span>Current</span><strong id="current">2.0 A</strong></div>
+  <div class="metric"><span>Power</span><strong id="power">24.0 W</strong></div>
+  <div class="metric"><span>Temperature</span><strong id="temperature">30 °C</strong></div>
+</div>
+</div><div class="card">
+<h2>Adjust Battery Inputs</h2><label for="vRange">Battery Voltage: <b id="vText">12.0 V</b></label>
+<input id="vRange" type="range" min="0" max="20" step="0.5" value="12">
+
+<label for="iRange">Load Current: <b id="iText">2.0 A</b></label>
+<input id="iRange" type="range" min="0" max="10" step="0.5" value="2">
+
+<label for="tRange">Battery Temperature: <b id="tText">30 °C</b></label>
+<input id="tRange" type="range" min="0" max="80" step="1" value="30">
+
+<label for="socRange">State of Charge: <b id="socText">75%</b></label>
+<input id="socRange" type="range" min="0" max="100" step="1" value="75">
+
+<div>
+<button onclick="setFault('low')">Simulate Low Voltage</button>
+<button class="fault" onclick="setFault('high')">Simulate High Voltage</button>
+<button class="fault" onclick="setFault('current')">Simulate Overcurrent</button>
+<button class="fault" onclick="setFault('temp')">Simulate Overtemperature</button>
+<button class="reset" onclick="resetValues()">Reset</button>
+</div>
+</div><div class="card">
+<h2>BMS Protection Status</h2>
+<div id="status"><span id="led"></span>System Normal</div>
+<p id="message">All simulated parameters are within the configured limits.</p>
+</div><div class="card">
+<h2>Voltage Monitoring Graph</h2>
+<svg id="graph" viewBox="0 0 600 150" preserveAspectRatio="none">
+  <line x1="0" y1="30" x2="600" y2="30" stroke="#334155"/>
+  <line x1="0" y1="75" x2="600" y2="75" stroke="#334155"/>
+  <line x1="0" y1="120" x2="600" y2="120" stroke="#334155"/>
+  <polyline id="line" points="" fill="none" stroke="#38bdf8" stroke-width="3"/>
+</svg>
+<p style="color:#94a3b8;font-size:13px">The graph updates when you change the voltage.</p>
+</div><div class="card">
+<h2>How This Simulation Works</h2>
+<ul>
+<li>Voltage and current are adjustable inputs.</li>
+<li>Electrical power is calculated using P = V × I.</li>
+<li>The BMS checks voltage, current and temperature limits.</li>
+<li>Fault conditions trigger a warning message.</li>
+<li>State of Charge (SOC) is displayed as a percentage.</li>
+</ul>
+</div><footer>
+Educational software simulation only. It does not connect to a real battery or measure real electrical values.
+</footer>
+</div><script>
+const vRange=document.getElementById("vRange");
+const iRange=document.getElementById("iRange");
+const tRange=document.getElementById("tRange");
+const socRange=document.getElementById("socRange");
+
+let history=[];
+
+function update(){
+  const v=Number(vRange.value);
+  const i=Number(iRange.value);
+  const t=Number(tRange.value);
+  const soc=Number(socRange.value);
+  const p=v*i;
+
+  document.getElementById("voltage").textContent=v.toFixed(1)+" V";
+  document.getElementById("current").textContent=i.toFixed(1)+" A";
+  document.getElementById("power").textContent=p.toFixed(1)+" W";
+  document.getElementById("temperature").textContent=t+" °C";
+
+  document.getElementById("vText").textContent=v.toFixed(1)+" V";
+  document.getElementById("iText").textContent=i.toFixed(1)+" A";
+  document.getElementById("tText").textContent=t+" °C";
+  document.getElementById("socText").textContent=soc+"%";
+  document.getElementById("batteryLabel").textContent=soc+"% State of Charge";
+  document.getElementById("batteryFill").style.width=soc+"%";
+
+  const fill=document.getElementById("batteryFill");
+  fill.style.background=soc<20?"#ef4444":soc<40?"#f59e0b":"#22c55e";
+
+  let warnings=[];
+  if(v<10) warnings.push("Low voltage detected");
+  if(v>14.6) warnings.push("High voltage detected");
+  if(i>8) warnings.push("Overcurrent detected");
+  if(t>60) warnings.push("Overtemperature detected");
+  if(soc<15) warnings.push("Low battery charge");
+
+  const status=document.getElementById("status");
+  const led=document.getElementById("led");
+
+  if(warnings.length){
+    status.style.background="#7f1d1d";
+    status.style.color="#fecaca";
+    led.style.background="#ef4444";
+    status.innerHTML='<span id="led" style="background:#ef4444"></span>Warning: Fault Detected';
+    document.getElementById("message").textContent=warnings.join(" • ");
+  }else{
+    status.style.background="#14532d";
+    status.style.color="#bbf7d0";
+    status.innerHTML='<span id="led" style="background:#22c55e"></span>System Normal';
+    document.getElementById("message").textContent=
+      "All simulated parameters are within the configured limits.";
+  }
+
+  history.push(v);
+  if(history.length>30) history.shift();
+
+  const points=history.map((value,index)=>{
+    const x=history.length===1?300:index*600/(history.length-1);
+    const y=140-(value/20)*130;
+    return x.toFixed(1)+","+y.toFixed(1);
+  }).join(" ");
+
+  document.getElementById("line").setAttribute("points",points);
+}
+
+function setFault(type){
+  if(type==="low") vRange.value=8;
+  if(type==="high") vRange.value=16;
+  if(type==="current") iRange.value=9;
+  if(type==="temp") tRange.value=70;
+  update();
+}
+
+function resetValues(){
+  vRange.value=12;
+  iRange.value=2;
+  tRange.value=30;
+  socRange.value=75;
+  history=[];
+  update();
+}
+
+[vRange,iRange,tRange,socRange].forEach(input=>{
+  input.addEventListener("input",update);
+});
+
+update();
+</script></body>
+</html>
